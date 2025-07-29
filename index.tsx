@@ -51,34 +51,36 @@ declare var html2canvas: (element: HTMLElement, options?: any) => Promise<HTMLCa
 
 // --- MAIN APPLICATION LOGIC ---
 const App = {
-    // --- DOM Elements ---
-    companyInputsContainer: document.getElementById('company-inputs-container') as HTMLDivElement,
-    addCompanyBtn: document.getElementById('add-company-btn') as HTMLButtonElement,
-    analyzeBtn: document.getElementById('analyze-button') as HTMLButtonElement,
-    downloadCsvBtn: document.getElementById('download-csv-btn') as HTMLButtonElement,
-    downloadXlsxBtn: document.getElementById('download-xlsx-btn') as HTMLButtonElement,
-    benchmarkCheckbox: document.getElementById('benchmark-checkbox') as HTMLInputElement,
-    benchmarkSelectorContainer: document.getElementById('benchmark-selector-container') as HTMLDivElement,
-    benchmarkSelector: document.getElementById('benchmark-selector') as HTMLSelectElement,
-    benchmarkHint: document.getElementById('benchmark-hint') as HTMLParagraphElement,
-    loader: document.getElementById('loader') as HTMLDivElement,
-    loadingText: document.getElementById('loading-text') as HTMLParagraphElement,
-    errorContainer: document.getElementById('error-container') as HTMLDivElement,
-    errorMessage: document.getElementById('error-message') as HTMLSpanElement,
-    resultsSection: document.getElementById('results-section') as HTMLDivElement,
-    comparisonControls: document.getElementById('comparison-controls') as HTMLDivElement,
-    navLinks: document.querySelectorAll('.nav-link') as NodeListOf<HTMLAnchorElement>,
-    forecastNavLink: document.querySelector('a[href="#forecast-content"]') as HTMLAnchorElement,
-    valuationNavLink: document.querySelector('a[href="#valuation-content"]') as HTMLAnchorElement,
-    contentPanels: document.querySelectorAll('.content-panel') as NodeListOf<HTMLDivElement>,
-    forecastCheckbox: document.getElementById('forecast-checkbox') as HTMLInputElement,
-    forecastCheckboxContainer: document.getElementById('forecast-checkbox-container') as HTMLDivElement,
+    // --- DOM Elements (initialized in init method) ---
+    companyInputsContainer: null as HTMLDivElement | null,
+    addCompanyBtn: null as HTMLButtonElement | null,
+    analyzeBtn: null as HTMLButtonElement | null,
+    downloadCsvBtn: null as HTMLButtonElement | null,
+    downloadXlsxBtn: null as HTMLButtonElement | null,
+    benchmarkCheckbox: null as HTMLInputElement | null,
+    benchmarkSelectorContainer: null as HTMLDivElement | null,
+    benchmarkSelector: null as HTMLSelectElement | null,
+    benchmarkHint: null as HTMLParagraphElement | null,
+    loader: null as HTMLDivElement | null,
+    loadingText: null as HTMLParagraphElement | null,
+    errorContainer: null as HTMLDivElement | null,
+    errorMessage: null as HTMLSpanElement | null,
+    resultsSection: null as HTMLDivElement | null,
+    comparisonControls: null as HTMLDivElement | null,
+    navLinks: null as NodeListOf<HTMLAnchorElement> | null,
+    forecastNavLink: null as HTMLAnchorElement | null,
+    valuationNavLink: null as HTMLAnchorElement | null,
+    contentPanels: null as NodeListOf<HTMLDivElement> | null,
+    forecastCheckbox: null as HTMLInputElement | null,
+    forecastCheckboxContainer: null as HTMLDivElement | null,
 
-    correctionModal: document.getElementById('correction-modal') as HTMLDivElement,
-    correctionModalContent: document.getElementById('correction-modal-content') as HTMLDivElement,
-    correctionFormContainer: document.getElementById('correction-form-container') as HTMLDivElement,
-    confirmCorrectionBtn: document.getElementById('confirm-correction-btn') as HTMLButtonElement,
-    cancelCorrectionBtn: document.getElementById('cancel-correction-btn') as HTMLButtonElement,
+    correctionModal: null as HTMLDivElement | null,
+    correctionModalContent: null as HTMLDivElement | null,
+    correctionFormContainer: null as HTMLDivElement | null,
+    confirmCorrectionBtn: null as HTMLButtonElement | null,
+    cancelCorrectionBtn: null as HTMLButtonElement | null,
+    
+    apiKeyInput: null as HTMLInputElement | null,
 
     // Chat elements - will be populated after analysis
     chatSection: null as HTMLDivElement | null,
@@ -150,13 +152,42 @@ const App = {
     ],
 
     init() {
-        try {
-            this.ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        } catch (error) {
-            this.showError(`Failed to initialize AI Client. Make sure the API key is set correctly. Error: ${error.message}`);
-            this.analyzeBtn.disabled = true;
-            return;
-        }
+        // Initialize DOM elements
+        this.companyInputsContainer = document.getElementById('company-inputs-container') as HTMLDivElement;
+        this.addCompanyBtn = document.getElementById('add-company-btn') as HTMLButtonElement;
+        this.analyzeBtn = document.getElementById('analyze-button') as HTMLButtonElement;
+        this.downloadCsvBtn = document.getElementById('download-csv-btn') as HTMLButtonElement;
+        this.downloadXlsxBtn = document.getElementById('download-xlsx-btn') as HTMLButtonElement;
+        this.benchmarkCheckbox = document.getElementById('benchmark-checkbox') as HTMLInputElement;
+        this.benchmarkSelectorContainer = document.getElementById('benchmark-selector-container') as HTMLDivElement;
+        this.benchmarkSelector = document.getElementById('benchmark-selector') as HTMLSelectElement;
+        this.benchmarkHint = document.getElementById('benchmark-hint') as HTMLParagraphElement;
+        this.loader = document.getElementById('loader') as HTMLDivElement;
+        this.loadingText = document.getElementById('loading-text') as HTMLParagraphElement;
+        this.errorContainer = document.getElementById('error-container') as HTMLDivElement;
+        this.errorMessage = document.getElementById('error-message') as HTMLSpanElement;
+        this.resultsSection = document.getElementById('results-section') as HTMLDivElement;
+        this.comparisonControls = document.getElementById('comparison-controls') as HTMLDivElement;
+        this.navLinks = document.querySelectorAll('.nav-link') as NodeListOf<HTMLAnchorElement>;
+        this.forecastNavLink = document.querySelector('a[href="#forecast-content"]') as HTMLAnchorElement;
+        this.valuationNavLink = document.querySelector('a[href="#valuation-content"]') as HTMLAnchorElement;
+        this.contentPanels = document.querySelectorAll('.content-panel') as NodeListOf<HTMLDivElement>;
+        this.forecastCheckbox = document.getElementById('forecast-checkbox') as HTMLInputElement;
+        this.forecastCheckboxContainer = document.getElementById('forecast-checkbox-container') as HTMLDivElement;
+        this.correctionModal = document.getElementById('correction-modal') as HTMLDivElement;
+        this.correctionModalContent = document.getElementById('correction-modal-content') as HTMLDivElement;
+        this.correctionFormContainer = document.getElementById('correction-form-container') as HTMLDivElement;
+        this.confirmCorrectionBtn = document.getElementById('confirm-correction-btn') as HTMLButtonElement;
+        this.cancelCorrectionBtn = document.getElementById('cancel-correction-btn') as HTMLButtonElement;
+        this.apiKeyInput = document.getElementById('api-key-input') as HTMLInputElement;
+
+        // Initialize AI client - will be set when user provides API key
+        this.ai = null;
+        
+        // Disable analyze button until API key is provided
+        this.analyzeBtn.disabled = true;
+        
+        // Add event listeners
         this.addCompanyBtn.addEventListener('click', this.addCompanyInput.bind(this));
         this.companyInputsContainer.addEventListener('click', this.handleContainerClick.bind(this));
         this.companyInputsContainer.addEventListener('change', this.handleFileChange.bind(this));
@@ -167,7 +198,25 @@ const App = {
         this.navLinks.forEach(link => {
             link.addEventListener('click', (e) => this.handleNavClick(e as MouseEvent));
         });
+        this.apiKeyInput.addEventListener('input', this.handleApiKeyInput.bind(this));
         this.updateAnalysisOptionsVisibility();
+    },
+
+    handleApiKeyInput() {
+        const apiKey = this.apiKeyInput.value.trim();
+        if (apiKey) {
+            try {
+                this.ai = new GoogleGenAI({ apiKey });
+                this.analyzeBtn.disabled = false;
+                this.hideError();
+            } catch (error) {
+                this.showError(`Invalid API key. Please check your Google AI API key.`);
+                this.analyzeBtn.disabled = true;
+            }
+        } else {
+            this.ai = null;
+            this.analyzeBtn.disabled = true;
+        }
     },
 
     updateAnalysisOptionsVisibility() {
@@ -255,6 +304,12 @@ const App = {
     },
 
     async handleAnalysis() {
+        // Check if API key is provided
+        if (!this.ai) {
+            this.showError('Please enter your Google AI API key first.');
+            return;
+        }
+        
         this.resetUI();
         const inputRows = this.companyInputsContainer.querySelectorAll('.company-input-row');
     

@@ -1,0 +1,37 @@
+
++[build]
++  # This is a static site, no build command needed
++  publish = "."
++  
++[build.environment]
++  # Ensure Node.js version compatibility
++  NODE_VERSION = "18"
++
++[[redirects]]
++  # Handle client-side routing for single page application
++  from = "/*"
++  to = "/index.html"
++  status = 200
++  
++[[headers]]
++  # Security headers
++  for = "/*"
++  [headers.values]
++    X-Frame-Options = "DENY"
++    X-XSS-Protection = "1; mode=block"
++    X-Content-Type-Options = "nosniff"
++    Referrer-Policy = "strict-origin-when-cross-origin"
++    
++[[headers]]
++  # MIME type for TypeScript modules
++  for = "*.tsx"
++  [headers.values]
++    Content-Type = "application/javascript; charset=utf-8"
++    
++[[headers]]  
++  # MIME type for JavaScript modules
++  for = "*.ts"
++  [headers.values]
++    Content-Type = "application/javascript; charset=utf-8"
+EOF
+)
